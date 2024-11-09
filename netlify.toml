@@ -1,9 +1,5 @@
-[[
-headers
-]]
+[[headers]]
   for = "/*"
-  [
-headers.values
-]
+  [headers.values]
     Content-Security-Policy = "connect-src * 'unsafe-inline' 'unsafe-eval'; default-src * 'unsafe-inline' 'unsafe-eval'"
     Access-Control-Allow-Origin = "*"
