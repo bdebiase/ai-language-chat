@@ -15,15 +15,6 @@ const LANGUAGES: LanguageOption[] = [
   { code: 'ru', name: 'Russian' }
 ]
 
-const getFullUrl = (path: string) => {
-  const baseUrl = config.apiUrl;
-  if (import.meta.env.PROD) {
-    // In production, append the path to the URL that's being proxied
-    return `${baseUrl}${encodeURIComponent(path)}`;
-  }
-  return `${baseUrl}${path}`;
-};;
-
 interface ChatWindowProps {
   conversation: Conversation;
   onConversationUpdate: (conversation: Conversation) => void;
