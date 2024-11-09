@@ -1,10 +1,9 @@
 [[headers]]
-for = "/*"
-[headers.values]
-Content-Security-Policy = "upgrade-insecure-requests"
-# Allow mixed content for your specific domain
-Content-Security-Policy = "block-all-mixed-content; connect-src 'self' http://147.185.221.19:25874 ws: wss:;"
-X-Frame-Options = "DENY"
-X-Content-Type-Options = "nosniff"
-Referrer-Policy = "strict-origin-when-cross-origin"
-Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+  for = "/*"
+  [headers.values]
+    # Combine all CSP directives into a single line
+    Content-Security-Policy = "upgrade-insecure-requests; block-all-mixed-content; connect-src 'self' http://147.185.221.19:25874 ws: wss:;"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
