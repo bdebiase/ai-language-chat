@@ -1,8 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Message, Conversation, ChatResponse } from "../types";
 import AudioRecorder from "./AudioRecorder";
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000';
+import { config } from '../config';
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -65,7 +64,7 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
       });
 
       try {
-        const response = await fetch(`${API_URL}/api/chat/message`, {
+        const response = await fetch(`${config.apiUrl}/api/chat/message`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
