@@ -1,9 +1,14 @@
-const BASE_URL = import.meta.env.PROD
-  ? 'http://147.185.221.19:25874/api'
-  : 'http://localhost:3000/api';
+// In production (Vercel), use the relative path which will be handled by the rewrite
+// In development, use the direct URL
+const API_URL = import.meta.env.PROD
+  ? '' // Empty string means use relative URLs
+  : 'http://147.185.221.19:25874';
+
+console.log('Mode:', import.meta.env.MODE);
+console.log('Using API URL:', API_URL || 'relative path (production)');
 
 export const config = {
-  apiUrl: BASE_URL.replace(/\/+$/, '') // Remove any trailing slashes
+  apiUrl: API_URL
 };
 
 export default config;
