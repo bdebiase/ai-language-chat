@@ -1,11 +1,24 @@
-const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+function getApiUrl() {
+  // If we're in production (Netlify)
+  if (import.meta.env.PROD) {
+    return 'http://147.185.221.19:25874';
+  }
 
-// Add debug logging
-console.log('API URL:', apiUrl);
-console.log('Environment:', import.meta.env.MODE); // Will show 'development' or 'production'
+  // If we have an environment variable
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+
+  // Fallback for local development
+  return 'http://localhost:3000';
+}
+
+const BACKEND_URL = getApiUrl();
+
+console.log('Using API URL:', BACKEND_URL);
 
 export const config = {
-  apiUrl
+  apiUrl: BACKEND_URL
 };
 
 export default config;

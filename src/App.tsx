@@ -65,7 +65,7 @@ function App() {
       <main className="flex-1">
         <div className="px-2 md:px-4">
           <h1 className="text-3xl font-bold text-center mb-8 text-gray-100 pt-4">
-            AI Conversation Assistant
+            Language Assistant
           </h1>
           {currentConversation ? (
             <ChatWindow

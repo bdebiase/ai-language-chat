@@ -3,6 +3,18 @@ import { Message, Conversation, ChatResponse } from "../types";
 import AudioRecorder from "./AudioRecorder";
 import { config } from '../config';
 
+interface LanguageOption {
+  code: string;
+  name: string;
+}
+
+const LANGUAGES: LanguageOption[] = [
+  { code: 'en', name: 'English' },
+  { code: 'es', name: 'Spanish' },
+  { code: 'de', name: 'German' },
+  { code: 'ru', name: 'Russian' }
+];
+
 interface ChatWindowProps {
   conversation: Conversation;
   onConversationUpdate: (conversation: Conversation) => void;
@@ -80,7 +92,9 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
           })
         });
 
-        if (!response.ok) throw new Error('Network response was not ok');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const reader = response.body?.getReader();
         if (!reader) throw new Error('No response body');
@@ -166,6 +180,12 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
           ...conversation,
           messages: messagesWithoutAI
         });
+
+        if (error instanceof Error) {
+          if (error.message.includes('SSL') || error.message.includes('certificate')) {
+            console.error('SSL Certificate error - you may need to accept the certificate or use HTTP instead');
+          }
+        }
       } finally {
         setIsLoading(false);
       }
@@ -183,9 +203,11 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
           })}
           className="bg-gray-700 border-gray-600 border rounded-lg px-4 py-2 text-white"
         >
-          <option value="en">English</option>
-          <option value="es">Spanish</option>
-          <option value="fr">French</option>
+          {LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.name}
+            </option>
+          ))}
         </select>
         <select
           value={conversation.outputLanguage}
@@ -195,9 +217,11 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
           })}
           className="bg-gray-700 border-gray-600 border rounded-lg px-4 py-2 text-white"
         >
-          <option value="es">Spanish</option>
-          <option value="en">English</option>
-          <option value="fr">French</option>
+          {LANGUAGES.map((lang) => (
+            <option key={lang.code} value={lang.code}>
+              {lang.name}
+            </option>
+          ))}
         </select>
       </div>
 
@@ -241,7 +265,7 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
 
         {/* Input form */}
         <form onSubmit={handleSubmit} className="flex gap-2 mt-4">
-          <AudioRecorder />
+          {/*<AudioRecorder />*/}
           <input
             type="text"
             value={inputMessage}
