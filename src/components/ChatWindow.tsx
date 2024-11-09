@@ -13,7 +13,16 @@ const LANGUAGES: LanguageOption[] = [
   { code: 'es', name: 'Spanish' },
   { code: 'de', name: 'German' },
   { code: 'ru', name: 'Russian' }
-];
+]
+
+const getFullUrl = (path: string) => {
+  const baseUrl = config.apiUrl;
+  if (import.meta.env.PROD) {
+    // In production, append the path to the URL that's being proxied
+    return `${baseUrl}${encodeURIComponent(path)}`;
+  }
+  return `${baseUrl}${path}`;
+};;
 
 interface ChatWindowProps {
   conversation: Conversation;
@@ -76,21 +85,29 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
       });
 
       try {
-        const response = await fetch(`${config.apiUrl}/api/chat/message`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            message: inputMessage,
-            inputLanguage: conversation.inputLanguage,
-            outputLanguage: conversation.outputLanguage,
-            conversationHistory: currentMessages.filter(msg => msg.id !== aiMessageId).map(msg => ({
-              role: msg.type === 'user' ? 'user' : 'assistant',
-              content: msg.originalMessage
-            }))
-          })
-        });
+          const baseUrl = config.apiUrl;
+          const endpoint = '/api/chat/message';
+          const fullUrl = import.meta.env.PROD
+            ? `${baseUrl}${encodeURIComponent(endpoint)}`
+            : `${baseUrl}${endpoint}`;
+
+          console.log('Sending request to:', fullUrl);
+
+          const response = await fetch(fullUrl, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              message: inputMessage,
+              inputLanguage: conversation.inputLanguage,
+              outputLanguage: conversation.outputLanguage,
+              conversationHistory: currentMessages.filter(msg => msg.id !== aiMessageId).map(msg => ({
+                role: msg.type === 'user' ? 'user' : 'assistant',
+                content: msg.originalMessage
+              }))
+            })
+          });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
