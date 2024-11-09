@@ -1,6 +1,6 @@
 const BACKEND_URL = import.meta.env.PROD
-  ? 'http://147.185.221.19:25874'  // Production URL
-  : 'http://localhost:3000';        // Local development
+  ? 'http://147.185.221.19:25874'.replace(/\/$/, '')
+  : 'http://localhost:3000'.replace(/\/$/, '');
 
 console.log('Mode:', import.meta.env.MODE);
 console.log('Using API URL:', BACKEND_URL);

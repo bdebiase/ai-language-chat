@@ -76,29 +76,24 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
       });
 
       try {
-          const baseUrl = config.apiUrl;
-          const endpoint = '/api/chat/message';
-          const fullUrl = import.meta.env.PROD
-            ? `${baseUrl}${encodeURIComponent(endpoint)}`
-            : `${baseUrl}${endpoint}`;
+        const apiUrl = constructApiUrl(config.apiUrl, 'api/chat/message');
+            console.log('Sending request to:', apiUrl);
 
-          console.log('Sending request to:', fullUrl);
-
-          const response = await fetch(fullUrl, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              message: inputMessage,
-              inputLanguage: conversation.inputLanguage,
-              outputLanguage: conversation.outputLanguage,
-              conversationHistory: currentMessages.filter(msg => msg.id !== aiMessageId).map(msg => ({
-                role: msg.type === 'user' ? 'user' : 'assistant',
-                content: msg.originalMessage
-              }))
-            })
-          });
+            const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                message: inputMessage,
+                inputLanguage: conversation.inputLanguage,
+                outputLanguage: conversation.outputLanguage,
+                conversationHistory: currentMessages.filter(msg => msg.id !== aiMessageId).map(msg => ({
+                  role: msg.type === 'user' ? 'user' : 'assistant',
+                  content: msg.originalMessage
+                }))
+              })
+            });
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
