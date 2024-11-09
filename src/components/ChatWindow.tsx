@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { Message, Conversation, ChatResponse } from "../types";
-import AudioRecorder from "./AudioRecorder";
+{/*import AudioRecorder from "./AudioRecorder";*/}
 import { config } from '../config';
 
 interface LanguageOption {
