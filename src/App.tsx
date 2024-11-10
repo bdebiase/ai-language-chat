@@ -54,7 +54,7 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 flex">
+    <div className="min-h-screen bg-gray-900 flex overflow-hidden">
       <Sidebar
         conversations={conversations}
         currentConversation={currentConversation}
@@ -62,8 +62,8 @@ function App() {
         onNewConversation={createNewConversation}
         onDeleteConversation={deleteConversation}
       />
-      <main className="flex-1">
-        <div className="px-2 md:px-4">
+      <main className="flex-1 overflow-hidden">
+        <div className="h-full overflow-auto">
           <h1 className="text-3xl font-bold text-center mb-8 text-gray-100 pt-4">
             Language Assistant
           </h1>

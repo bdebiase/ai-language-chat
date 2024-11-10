@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
 import { Message, Conversation, ChatResponse } from "../types";
 {/*import AudioRecorder from "./AudioRecorder";*/}
+import AudioPlayer from "./AudioPlayer";
 import { config } from '../config';
+import { removeEmojis } from '../utils/text';
 
 interface LanguageOption {
   code: string;
@@ -25,11 +27,18 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>(conversation.messages || []);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [currentAudio, setCurrentAudio] = useState<HTMLAudioElement | null>(null);
+  const [playingAudioId, setPlayingAudioId] = useState<string | null>(null);
 
-  // Sync messages when conversation changes
+  // Clean up on unmount
   useEffect(() => {
-    setMessages(conversation.messages || []);
-  }, [conversation.messages]);
+    return () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+    };
+  }, [currentAudio]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -38,6 +47,110 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  const playAudio = async (text: string, language: string) => {
+    try {
+      const response = await fetch(`${config.apiUrl}/api/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: removeEmojis(text),
+          language: language.toUpperCase()
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(`Failed to generate audio: ${errorData.error || response.statusText}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      // Clean up the URL after playing
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+      };
+
+      await audio.play();
+    } catch (error) {
+      console.error('Error playing audio:', error);
+      throw error;
+    }
+  };
+
+  const handlePlayAudio = async (audioId: string, text: string, language: string) => {
+    try {
+      // Stop any currently playing audio
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+        setCurrentAudio(null);
+        setPlayingAudioId(null);
+      }
+
+      setPlayingAudioId(audioId);
+
+      const response = await fetch(`${config.apiUrl}/api/tts`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: removeEmojis(text),
+          language: language.toUpperCase()
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to generate audio: ${response.statusText}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
+      const audio = new Audio(audioUrl);
+
+      // Set up event handlers before playing
+      audio.onended = () => {
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+        setPlayingAudioId(null);
+      };
+
+      audio.onerror = (e) => {
+        console.error('Audio playback error:', e);
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+        setPlayingAudioId(null);
+      };
+
+      // Set current audio before playing
+      setCurrentAudio(audio);
+
+      // Wait for the audio to be ready
+      await new Promise((resolve) => {
+        audio.oncanplaythrough = resolve;
+      });
+
+      // Play the audio
+      try {
+        await audio.play();
+      } catch (playError) {
+        console.error('Error playing audio:', playError);
+        URL.revokeObjectURL(audioUrl);
+        setCurrentAudio(null);
+        setPlayingAudioId(null);
+      }
+
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      setCurrentAudio(null);
+      setPlayingAudioId(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
       e.preventDefault();
@@ -76,7 +189,7 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
       });
 
       try {
-      const apiUrl = `${config.apiUrl}/api/chat/message`;
+        const apiUrl = `${config.apiUrl}/api/chat/message`;
           console.log('Sending request to:', apiUrl);
 
           const response = await fetch(apiUrl, {
@@ -135,7 +248,7 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
                         ? (data.translatedMessage || '') // If Spanish detected, show English translation as main message
                         : (data.originalMessage || msg.originalMessage), // Otherwise keep original
                       translatedMessage: data.detectedLanguage === conversation.outputLanguage
-                        ? (data.originalMessage || msg.originalMessage) // If Spanish detected, show original Spanish as translation
+                        ? (msg.originalMessage || '') // If Spanish detected, show original Spanish as translation
                         : (data.translatedMessage || msg.translatedMessage) // Otherwise show Spanish translation
                     }
                   : msg
@@ -195,7 +308,7 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
     };
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col overflow-hidden">
+    <div className="h-[calc(100vh-6rem)] flex flex-col overflow-hidden px-4 md:px-4">
       {/* Language selectors */}
       <div className="flex gap-4 mb-4">
         <select
@@ -249,11 +362,31 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
                       message.type === "user"
                         ? "bg-primary-500 text-white"
                         : "bg-gray-700 text-gray-100"
-                    } max-w-[80%] break-words`}
+                    } max-w-[80%] break-words relative`}
                   >
-                    <div>{message.originalMessage}</div>
+                    <div className="flex items-start gap-2">
+                      <div>{message.originalMessage}</div>
+                      <div className="ml-2">
+                        <AudioPlayer
+                          text={message.originalMessage}
+                          language={conversation.inputLanguage}
+                          isPlaying={playingAudioId === `${message.id}-original`}
+                          onClick={() => handlePlayAudio(`${message.id}-original`, message.originalMessage, conversation.inputLanguage)}
+                        />
+                      </div>
+                    </div>
                     <div className="text-sm mt-2 opacity-75 border-t border-white/20 pt-2">
-                      {message.translatedMessage}
+                      <div className="flex items-start gap-2">
+                        <div>{message.translatedMessage}</div>
+                        <div className="ml-2">
+                          <AudioPlayer
+                            text={message.translatedMessage}
+                            language={conversation.outputLanguage}
+                            isPlaying={playingAudioId === `${message.id}-translated`}
+                            onClick={() => handlePlayAudio(`${message.id}-translated`, message.translatedMessage, conversation.outputLanguage)}
+                          />
+                        </div>
+                      </div>
                     </div>
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
