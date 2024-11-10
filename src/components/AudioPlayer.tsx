@@ -1,15 +1,11 @@
-import { useState } from 'react';
 import { SpeakerWaveIcon } from '@heroicons/react/24/outline';
-import { config } from '../config';
 
 interface AudioPlayerProps {
-  text: string;
-  language: string;
   isPlaying: boolean;
   onClick: () => void;
 }
 
-const AudioPlayer: React.FC<AudioPlayerProps> = ({ text, language, isPlaying, onClick }) => {
+const AudioPlayer: React.FC<AudioPlayerProps> = ({ isPlaying, onClick }) => {
   return (
     <button
       onClick={onClick}

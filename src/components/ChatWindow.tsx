@@ -48,40 +48,6 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
     scrollToBottom();
   }, [messages]);
 
-  const playAudio = async (text: string, language: string) => {
-    try {
-      const response = await fetch(`${config.apiUrl}/api/tts`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: removeEmojis(text),
-          language: language.toUpperCase()
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(`Failed to generate audio: ${errorData.error || response.statusText}`);
-      }
-
-      const audioBlob = await response.blob();
-      const audioUrl = URL.createObjectURL(audioBlob);
-      const audio = new Audio(audioUrl);
-
-      // Clean up the URL after playing
-      audio.onended = () => {
-        URL.revokeObjectURL(audioUrl);
-      };
-
-      await audio.play();
-    } catch (error) {
-      console.error('Error playing audio:', error);
-      throw error;
-    }
-  };
-
   const handlePlayAudio = async (audioId: string, text: string, language: string) => {
     try {
       // Stop any currently playing audio
@@ -368,8 +334,6 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
                       <div>{message.originalMessage}</div>
                       <div className="ml-2">
                         <AudioPlayer
-                          text={message.originalMessage}
-                          language={conversation.inputLanguage}
                           isPlaying={playingAudioId === `${message.id}-original`}
                           onClick={() => handlePlayAudio(`${message.id}-original`, message.originalMessage, conversation.inputLanguage)}
                         />
@@ -380,8 +344,6 @@ const ChatWindow = ({ conversation, onConversationUpdate }: ChatWindowProps) => 
                         <div>{message.translatedMessage}</div>
                         <div className="ml-2">
                           <AudioPlayer
-                            text={message.translatedMessage}
-                            language={conversation.outputLanguage}
                             isPlaying={playingAudioId === `${message.id}-translated`}
                             onClick={() => handlePlayAudio(`${message.id}-translated`, message.translatedMessage, conversation.outputLanguage)}
                           />
